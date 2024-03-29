@@ -9,17 +9,17 @@ stock = 'GOOG'
 data = yf.download(stock, start, end)
 # print(data)
 data.reset_index(inplace=True)
-ma_100_days = data.Close.rolling(100).mean()
+mavg100 = data.Close.rolling(100).mean()
 
 plt.figure(figsize=(8,6))
-plt.plot(ma_100_days, 'r')
+plt.plot(mavg100, 'r')
 plt.plot(data.Close, 'g')
 plt.show()
 
-ma_200_days = data.Close.rolling(200).mean()
+mavg200 = data.Close.rolling(200).mean()
 plt.figure(figsize=(8,6))
-plt.plot(ma_100_days, 'r')
-plt.plot(ma_200_days,'b')
+plt.plot(mavg100, 'r')
+plt.plot(mavg200,'b')
 plt.plot(data.Close,'g')
 plt.show()
 
@@ -60,8 +60,8 @@ model.compile(optimizer = 'adam', loss = 'mean_squared_error')
 model.fit(x,y, epochs = 50, batch_size =32, verbose =1)
 print(model.summary())
 
-pas_100_days = data_train.tail(100)
-data_test = pd.concat([pas_100_days, data_test], ignore_index=True)
+prev100 = data_train.tail(100)
+data_test = pd.concat([prev100, data_test], ignore_index=True)
 data_test_scale  =  scaler.fit_transform(data_test)
 
 x1 = []
