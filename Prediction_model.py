@@ -1,87 +1,79 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import yfinance as yf
+from keras.models import load_model
+import streamlit as st
+import matplotlib.pyplot as plt
+from datetime import date
 
+model = load_model("Prediction_Model.keras")
+
+url = "https://stockanalysis.com/stocks/"
+st.header('Stock Market Predictor')
+st.write("You can visit to this [website](%s) to check the code of your desired stock." % url)
+
+stock =st.text_input('Enter Stock Symbol', 'GOOG')
 start = '2012-01-01'
-end = '2024-03-20'
-stock = 'GOOG'
-data = yf.download(stock, start, end)
-# print(data)
-data.reset_index(inplace=True)
-mavg100 = data.Close.rolling(100).mean()
+end = date.today()
 
-plt.figure(figsize=(8,6))
-plt.plot(mavg100, 'r')
-plt.plot(data.Close, 'g')
-plt.show()
+data = yf.download(stock, start ,end)
 
-mavg200 = data.Close.rolling(200).mean()
-plt.figure(figsize=(8,6))
-plt.plot(mavg100, 'r')
-plt.plot(mavg200,'b')
-plt.plot(data.Close,'g')
-plt.show()
+st.subheader('Stock Data')
+st.write(data)
 
-data.dropna(inplace=True)
-data_train = pd.DataFrame(data.Close[0: int(len(data)*0.80)])
+data_tr = pd.DataFrame(data.Close[0: int(len(data)*0.80)])
 data_test = pd.DataFrame(data.Close[int(len(data)*0.80): len(data)])
-
 from sklearn.preprocessing import MinMaxScaler
 scaler = MinMaxScaler(feature_range=(0,1))
-data_train_scale = scaler.fit_transform(data_train)
+
+prev_100 = data_tr.tail(100)
+data_test = pd.concat([prev_100, data_test], ignore_index=True)
+data_test_scale = scaler.fit_transform(data_test)
+
+st.subheader('Price vs MAVG50')
+mavg50 = data.Close.rolling(50).mean()
+fig1 = plt.figure(figsize=(8,6))
+plt.plot(mavg50, 'r')
+plt.plot(data.Close, 'g')
+plt.show()
+st.pyplot(fig1)
+
+st.subheader('Price vs MAVG50 vs MAVG100')
+mavg100 = data.Close.rolling(100).mean()
+fig2 = plt.figure(figsize=(8,6))
+plt.plot(mavg50, 'r')
+plt.plot(mavg100, 'b')
+plt.plot(data.Close, 'g')
+plt.show()
+st.pyplot(fig2)
+
+st.subheader('Price vs MAVG100 vs MAVG200')
+mavg200 = data.Close.rolling(200).mean()
+fig3 = plt.figure(figsize=(8,6))
+plt.plot(mavg100, 'r')
+plt.plot(mavg200, 'b')
+plt.plot(data.Close, 'g')
+plt.show()
+st.pyplot(fig3)
 
 x = []
 y = []
 
-for i in range(100, data_train_scale.shape[0]):
-    x.append(data_train_scale[i-100:i])
-    y.append(data_train_scale[i,0])
-
-x, y = np.array(x), np.array(y)
-from keras.layers import Dense, Dropout, LSTM
-from keras.models import Sequential
-model = Sequential()
-model.add(LSTM(units = 50, activation = 'relu', return_sequences = True, input_shape = ((x.shape[1],1))))
-model.add(Dropout(0.2))
-
-model.add(LSTM(units = 60, activation='relu', return_sequences = True))
-model.add(Dropout(0.3))
-
-model.add(LSTM(units = 80, activation = 'relu', return_sequences = True))
-model.add(Dropout(0.4))
-
-model.add(LSTM(units = 120, activation = 'relu'))
-model.add(Dropout(0.5))
-
-model.add(Dense(units =1))
-
-model.compile(optimizer = 'adam', loss = 'mean_squared_error')
-model.fit(x,y, epochs = 50, batch_size =32, verbose =1)
-print(model.summary())
-
-prev100 = data_train.tail(100)
-data_test = pd.concat([prev100, data_test], ignore_index=True)
-data_test_scale  =  scaler.fit_transform(data_test)
-
-x1 = []
-y1 = []
 for i in range(100, data_test_scale.shape[0]):
-    x1.append(data_test_scale[i-100:i])
-    y1.append(data_test_scale[i,0])
-x1, y1 = np.array(x1), np.array(y1)
+    x.append(data_test_scale[i-100:i])
+    y.append(data_test_scale[i,0])
 
-y_predict = model.predict(x1)
-scale =1/scaler.scale_
-y_predict = y_predict*scale
-y1 = y1*scale
+x,y = np.array(x), np.array(y)
+predict = model.predict(x)
+scale = 1/scaler.scale_
+predict = predict * scale
+y = y * scale
 
-plt.figure(figsize=(10,8))
-plt.plot(y_predict, 'r', label = 'Predicted Price')
-plt.plot(y1, 'g', label = 'Original Price')
+st.subheader('Original Price vs Predicted Price')
+fig4 = plt.figure(figsize=(8,6))
+plt.plot(predict, 'r', label='Original Price')
+plt.plot(y, 'g', label = 'Predicted Price')
 plt.xlabel('Time')
 plt.ylabel('Price')
-plt.legend()
 plt.show()
-
-model.save('Prediction_Model.keras')
+st.pyplot(fig4)
