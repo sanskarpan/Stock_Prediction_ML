@@ -7,3 +7,4 @@ keras==2.8.0
 tensorflow==2.8.0
 streamlit
 datetime
+protobuf==3.20.0
