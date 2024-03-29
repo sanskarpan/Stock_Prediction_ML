@@ -6,6 +6,10 @@ import streamlit as st
 import matplotlib.pyplot as plt
 from datetime import date
 
+import os
+os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
+
+
 model = load_model("Prediction_Model.keras")
 
 url = "https://stockanalysis.com/stocks/"
