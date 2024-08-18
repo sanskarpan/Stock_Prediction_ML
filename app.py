@@ -15,19 +15,26 @@ os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 # Define the model file path
 model_path = "Prediction_Model.keras"
 
+# Function to download model file
+def download_model(url, path):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            with open(path, 'wb') as f:
+                f.write(response.content)
+            st.success("Model downloaded successfully.")
+        else:
+            st.error("Failed to download the model. Status code: {}".format(response.status_code))
+            st.stop()
+    except Exception as e:
+        st.error(f"An error occurred while downloading the model: {e}")
+        st.stop()
+
 # Check if the model file exists, and if not, download it
 if not os.path.exists(model_path):
     st.warning("Model file not found locally. Attempting to download...")
     model_url = "https://raw.githubusercontent.com/sanskarpan/Stock_Prediction_ML/main/Prediction_Model.keras"
-    response = requests.get(model_url)
-    
-    if response.status_code == 200:
-        with open(model_path, 'wb') as f:
-            f.write(response.content)
-        st.success("Model downloaded successfully.")
-    else:
-        st.error("Failed to download the model. Please check the URL or your internet connection.")
-        st.stop()
+    download_model(model_url, model_path)
 
 # Load the model
 try:
@@ -97,7 +104,7 @@ for i in range(100, data_test_scale.shape[0]):
 
 x, y = np.array(x), np.array(y)
 predict = model.predict(x)
-scale = 1/scaler.scale_
+scale = 1 / scaler.scale_
 predict = predict * scale
 y = y * scale
 
